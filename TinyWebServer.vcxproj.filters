@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="epoll\epoll.cpp" />
+    <ClCompile Include="http\http_conn.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="http">
+      <UniqueIdentifier>{9a93f4c4-b426-4699-a2a9-3f919d945102}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="epoll\epoll.h" />
+    <ClInclude Include="http\http_conn.h" />
+  </ItemGroup>
+</Project>
