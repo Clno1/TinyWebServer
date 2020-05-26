@@ -4,6 +4,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="epoll\epoll.cpp" />
     <ClCompile Include="http\http_conn.cpp" />
+    <ClCompile Include="CGImysql\sql_connection_pool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="http">
@@ -13,5 +14,8 @@
   <ItemGroup>
     <ClInclude Include="epoll\epoll.h" />
     <ClInclude Include="http\http_conn.h" />
+    <ClInclude Include="threadpool\threadpool.h" />
+    <ClInclude Include="lock\locker.h" />
+    <ClInclude Include="CGImysql\sql_connection_pool.h" />
   </ItemGroup>
 </Project>

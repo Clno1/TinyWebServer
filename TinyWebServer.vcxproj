@@ -75,13 +75,17 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="CGImysql\sql_connection_pool.cpp" />
     <ClCompile Include="epoll\epoll.cpp" />
     <ClCompile Include="http\http_conn.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CGImysql\sql_connection_pool.h" />
     <ClInclude Include="epoll\epoll.h" />
     <ClInclude Include="http\http_conn.h" />
+    <ClInclude Include="lock\locker.h" />
+    <ClInclude Include="threadpool\threadpool.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
