@@ -15,6 +15,7 @@
 #include "epoll/epoll.h"
 #include "http/http_conn.h"
 #include"timer/lst_timer.h"
+#include"CGImysql/sql_connection_pool.h"
 
 
 #define MAX_FD 65536        //最大的文件描述符数量
@@ -40,11 +41,16 @@ int main(int argc,char *argv[])
     http_conn::m_epollfd = epollfd;
     epoll_event events[MAX_EVENT_NUMBER];
 
+    //通过单例模式获得数据库连接池，获得之后初始化
+    connection_pool* connPool = connection_pool::GetInstance();
+    connPool->init("localhost", "root", "root", "yourdb", 3306, 8);
     
+
     timer_init(epollfd,pipefd);     //定时器初始工作
 
     addfd(epollfd,listenfd,false);      //把listenfd添加到监听红黑树上
 
+    client_data* user_timer = new client_data[MAX_FD];
     http_conn* users = new http_conn[MAX_FD];
     assert(users);
 
@@ -81,10 +87,44 @@ int main(int argc,char *argv[])
 
                 users[connfd].init(connfd, client_address);     // 初始化新客户，并epoll监听
 
+                //创造timer和client_data
+                user_timer[connfd].address = client_address;
+                user_timer[connfd].sockfd = connfd;
+                
+                util_timer* timer = new util_timer;
+                timer->user_data = &user_timer[connfd];
+                timer->cb_func = cb_func;
+                timer->expire = time(NULL) + 3 * TIMESLOT;
+
+                user_timer[connfd].timer = timer;
+                //上面创造好了timer，加入到链表中
+                timer_lst.add_timer(timer);
             }
             //对端关闭连接
             else if (whatopt & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
 
+            }
+            //因为统一了事件源，信号处理当成读事件来处理
+            //怎么统一？就是信号回调函数哪里不立即处理而是写到：pipe的写端
+            else if ((sockfd==pipefd[0]) && (whatopt & EPOLLIN)) {
+                int sig;
+                char signals[1024];
+                int ret = recv(pipefd[0], signals, sizeof(signals), 0);
+                if (ret == -1) continue;
+                if (ret == 0) continue;
+                //在这里处理信号
+                for (int i = 0; i < ret; i++) {
+                    switch (signals[i])
+                    {
+                    case SIGALRM:
+                        timeout = true;
+                        break;
+                    case SIGTERM:
+                        stop_server = true;
+                    default:
+                        break;
+                    }
+                }
             }
             //输入事件
             else if (whatopt & EPOLLIN) {
