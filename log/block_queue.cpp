@@ -94,18 +94,65 @@ int block_queue<T>::max_size() {
 }
 
 
-
+//当有元素push进队列,相当于生产者生产了一个元素
 template<class T>
 bool block_queue<T>::push(const T& item) {
+	m_mutex.lock();
+	if (m_size >= m_max_size) {
+		m_cond.broadcast();
+		m_mutex.unlock();
+		return false;
+	}
+	//生产者生产一个东西
+	m_back = (m_back + 1) % m_max_size;
+	m_array[m_back] = item;
+	m_size++;
 
+	m_cond.broadcast();		//唤醒阻塞在条件变量的
+	m_mutex.unlock();
+	return true;
 }
-
+//pop时,如果当前队列没有元素,将会等待条件变量
 template<class T>
 bool block_queue<T>::pop(T &item) {
+	m_mutex.lock();
+	while (m_size<=0) {
+		if (!m_cond.wait(m_mutex.get())) {
+			m_mutex.unlock();
+			return false;
+		}
+	}
+	//成功,消费者能够取出来
+	m_front = (m_front + 1) % m_max_size;
+	item = m_array[m_front];
+	m_size--;
 
+	m_mutex.unlock();
+	return true;
 }
 
 template<class T>		//这是带时间的pop
 bool block_queue<T>::pop(T& item, int ms_timeout) {
+	struct timespec t = { 0,0 };
+	struct timeval now = { 0,0 };
+	gettimeofday(&now, NULL);
+	m_mutex.lock();
+	if (m_size <= 0) {
+		t.tv_sec = now.tv_sec + ms_timeout / 1000;
+		t.tv_nsec = (ms_timeout % 1000) * 1000;
+		if (!m_cond.timewait(m_mutex.get(), t)) {
+			m_mutex.unlock();
+			return false;
+		}
+	}
+	if (m_size <= 0) {
+		m_mutex.unlock();
+		return false;
+	}
 
+	m_front = (m_front + 1) % m_max_size;
+	item = m_array[m_front];
+	m_size--;
+	m_mutex.unlock();
+	return true;
 }
