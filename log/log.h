@@ -1,9 +1,12 @@
 #ifndef LOG_H
 #define LOG_H
 
+
 #include<stdio.h>
 #include<iostream>
 #include<pthread.h>
+#include<cstring>
+#include<string>
 
 #include"block_queue.h"
 
@@ -13,8 +16,6 @@
 #define LOG_INFO(format, ...) Log::get_instance()->write_log(1, format, ##__VA_ARGS__)
 #define LOG_WARN(format, ...) Log::get_instance()->write_log(2, format, ##__VA_ARGS__)
 #define LOG_ERROR(format, ...) Log::get_instance()->write_log(3, format, ##__VA_ARGS__)
-
-using namespace std;
 
 class Log
 {
@@ -54,7 +55,7 @@ private:
 	bool m_is_async;			//是否同步标志
 	
 	locker m_mutex;			//队列的互斥锁
-	block_queue<string>* m_log_queue;		//日志阻塞队列
+	block_queue<std::string>* m_log_queue;		//日志阻塞队列
 
 };
 

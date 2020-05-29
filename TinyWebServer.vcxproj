@@ -78,6 +78,8 @@
     <ClCompile Include="CGImysql\sql_connection_pool.cpp" />
     <ClCompile Include="epoll\epoll.cpp" />
     <ClCompile Include="http\http_conn.cpp" />
+    <ClCompile Include="log\block_queue.cpp" />
+    <ClCompile Include="log\log.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -85,9 +87,20 @@
     <ClInclude Include="epoll\epoll.h" />
     <ClInclude Include="http\http_conn.h" />
     <ClInclude Include="lock\locker.h" />
+    <ClInclude Include="log\block_queue.h" />
+    <ClInclude Include="log\log.h" />
     <ClInclude Include="threadpool\threadpool.h" />
+    <ClInclude Include="timer\lst_timer.h" />
   </ItemGroup>
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile />
+    <Link>
+      <LibraryDependencies>mysqlclient;pthread;</LibraryDependencies>
+    </Link>
+    <ClCompile>
+      <CppLanguageStandard>c++11</CppLanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

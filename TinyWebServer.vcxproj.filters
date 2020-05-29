@@ -5,6 +5,8 @@
     <ClCompile Include="epoll\epoll.cpp" />
     <ClCompile Include="http\http_conn.cpp" />
     <ClCompile Include="CGImysql\sql_connection_pool.cpp" />
+    <ClCompile Include="log\block_queue.cpp" />
+    <ClCompile Include="log\log.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="http">
@@ -17,5 +19,8 @@
     <ClInclude Include="threadpool\threadpool.h" />
     <ClInclude Include="lock\locker.h" />
     <ClInclude Include="CGImysql\sql_connection_pool.h" />
+    <ClInclude Include="timer\lst_timer.h" />
+    <ClInclude Include="log\block_queue.h" />
+    <ClInclude Include="log\log.h" />
   </ItemGroup>
 </Project>

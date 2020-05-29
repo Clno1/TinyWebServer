@@ -1,12 +1,15 @@
 
 #include<iostream>
 #include<stdlib.h>
+#include<sys/time.h>
+#include<cstring>
+#include<string>
 
 #include"block_queue.h"
 
 //构造析构函数
 template<class T>
-block_queue<T>::block_queue(int max_size=1000) {
+block_queue<T>::block_queue(int max_size) {
 	if (max_size <= 0) exit(-1);
 	m_max_size = max_size;
 	m_array = new T[max_size];

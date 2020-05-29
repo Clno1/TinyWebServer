@@ -7,6 +7,7 @@
 #include<errno.h>
 #include<list>
 #include<mysql/mysql.h>
+#include<string>
 
 #include"../lock/locker.h"
 

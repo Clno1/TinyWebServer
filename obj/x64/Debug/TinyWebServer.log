@@ -5,8 +5,23 @@
   正在启动远程生成
   正在编译源:
   main.cpp
-D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(104,34): warning : conversion to ‘uint16_t {aka short unsigned int}’ from ‘int’ may alter its value [-Wconversion]
-D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(104,34): warning :      address.sin_port = htons(port);
-D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(104,34): warning :                                   ^
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(122,31): warning : conversion to ‘int’ from ‘ssize_t {aka long int}’ may alter its value [-Wconversion]
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(122,31): warning :                  int ret = recv(pipefd[0], signals, sizeof(signals), 0);
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(122,31): warning :                            ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(120,21): warning : unused variable ‘sig’ [-Wunused-variable]
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(120,21): warning :                  int sig;
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(120,21): warning :                      ^~~
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(208,34): warning : conversion to ‘uint16_t {aka short unsigned int}’ from ‘int’ may alter its value [-Wconversion]
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(208,34): warning :      address.sin_port = htons(port);
+D:\Myprogram\Windows\Testlinux\TinyWebServer\main.cpp(208,34): warning :                                   ^
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(36,7): warning : ‘threadpool<http_conn>::m_stop’ will be initialized after [-Wreorder]
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(36,7): warning :   bool m_stop;   //�̳߳ؽ�����־
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(36,7): warning :        ^~~~~~
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(30,13): warning : ‘pthread_t* threadpool<http_conn>::m_threads’ [-Wreorder]
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(30,13): warning :   pthread_t* m_threads;  //�̳߳�  ����
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(30,13): warning :              ^~~~~~~~~
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(42,1): warning : when initialized here [-Wreorder]
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(73,25): warning : comparison between signed and unsigned integer expressions [-Wsign-compare]
+D:\Myprogram\Windows\Testlinux\TinyWebServer\threadpool\threadpool.h(73,25): warning :   if (m_workqueue.size() > m_max_requests) {
   正在链接对象
   TinyWebServer.vcxproj -> D:\Myprogram\Windows\Testlinux\TinyWebServer\bin\x64\Debug\TinyWebServer.out

@@ -6,7 +6,8 @@
 #include<arpa/inet.h>
 #include<netinet/in.h>
 #include <assert.h>
-#include <string.h>
+#include <cstring>
+#include<string>
 #include<sys/epoll.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -16,11 +17,12 @@
 #include "http/http_conn.h"
 #include"timer/lst_timer.h"
 #include"CGImysql/sql_connection_pool.h"
+#include"threadpool/threadpool.h"
 
 
 #define MAX_FD 65536        //最大的文件描述符数量
 #define MAX_EVENT_NUMBER 10000      //最大事件数量
-#define TIMESLOT 5          //时间间隔
+#define TIMESLOT 10          //时间间隔
 
 int epollfd,pipefd[2];
 sort_timer_lst timer_lst;       //定时器链表
@@ -44,14 +46,15 @@ int main(int argc,char *argv[])
     //通过单例模式获得数据库连接池，获得之后初始化
     connection_pool* connPool = connection_pool::GetInstance();
     connPool->init("localhost", "root", "root", "yourdb", 3306, 8);
-    
+    //创建线程池,线程池的T是http_conn类型
+    threadpool<http_conn>* pool = new threadpool<http_conn>(connPool);
 
     timer_init(epollfd,pipefd);     //定时器初始工作
 
     addfd(epollfd,listenfd,false);      //把listenfd添加到监听红黑树上
 
-    client_data* user_timer = new client_data[MAX_FD];
-    http_conn* users = new http_conn[MAX_FD];
+    client_data* user_timer = new client_data[MAX_FD];      //用户信息数组，定时器结点要用（用于回调关闭该用户连接）
+    http_conn* users = new http_conn[MAX_FD];       //用户连接数组
     assert(users);
 
     bool stop_server = false;
@@ -69,7 +72,7 @@ int main(int argc,char *argv[])
             int sockfd = events[i].data.fd;
             int whatopt = events[i].events;
 
-            //有新连接请求
+            //有新连接请求事件
             if (sockfd == listenfd) {
                 struct sockaddr_in client_address;
                 socklen_t client_address_len = sizeof(client_address);
@@ -85,6 +88,10 @@ int main(int argc,char *argv[])
                     continue;
                 }
 
+                in_addr client_ip;
+                memcpy(&client_ip, &client_address.sin_addr.s_addr, 4);
+                printf("ip:%s connect\n", inet_ntoa(client_ip) );
+                
                 users[connfd].init(connfd, client_address);     // 初始化新客户，并epoll监听
 
                 //创造timer和client_data
@@ -94,15 +101,18 @@ int main(int argc,char *argv[])
                 util_timer* timer = new util_timer;
                 timer->user_data = &user_timer[connfd];
                 timer->cb_func = cb_func;
-                timer->expire = time(NULL) + 3 * TIMESLOT;
+                timer->expire = time(NULL) + 6 * TIMESLOT;
 
                 user_timer[connfd].timer = timer;
                 //上面创造好了timer，加入到链表中
                 timer_lst.add_timer(timer);
             }
-            //对端关闭连接
+            //对端关闭连接事件
             else if (whatopt & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-
+                //对端关闭了，我们这边也关闭然后取消定时器
+                util_timer* timer = user_timer[sockfd].timer;
+                timer->cb_func(&user_timer[sockfd]);
+                if (timer) timer_lst.del_timer(timer);
             }
             //因为统一了事件源，信号处理当成读事件来处理
             //怎么统一？就是信号回调函数哪里不立即处理而是写到：pipe的写端
@@ -126,28 +136,62 @@ int main(int argc,char *argv[])
                     }
                 }
             }
-            //输入事件
+            /*输入事件，理想步骤是：
+            process->porcess_read(不断parse_line->parse_status_line/parse_headers/parse_content
+            ->do_request)->process_write(add_line/heads/content...)
+            ->把报文搓到输出缓冲区
+           */
             else if (whatopt & EPOLLIN) {
+                //开始处理这个浏览器请求
+                util_timer* timer = user_timer[sockfd].timer;
+                if (users[sockfd].read_once()) {        //1，把所有数据读进来
+                    pool->append(users + sockfd);   //2，读完之后把往线程池任务队列放入一个任务
                 
-                //Test
-                read(users[sockfd].m_sockfd, users[sockfd].m_read_buf, http_conn::READ_BUFFER_SIZE);
-                printf("%s\n", users[sockfd].m_read_buf);
+                    //因为有了新请求，所以把这个客户的不活跃事件延后
+                    //延后时间之后做出位置调整
+                    if (timer) {
+                        timer->expire = time(NULL) + 6 * TIMESLOT;
+                        timer_lst.adjust_timer(timer);
+                    }
+                }
+                //read_once()失败，关闭连接吧
+                else {
+                    timer->cb_func(&user_timer[sockfd]);
+                    if (timer) timer_lst.del_timer(timer);
+                }
             }
             //输出事件
             else if (whatopt & EPOLLOUT) {
-
+                util_timer* timer = user_timer[sockfd].timer;
+                //在上面读事件已经搓好响应报文就等这里write把输出缓冲区发送给浏览器
+                if (users[sockfd].write()) {
+                    //跟读事件一样，延后这个客户的不活跃事件
+                    if (timer) {
+                        timer->expire = time(NULL) + 6 * TIMESLOT;
+                        timer_lst.adjust_timer(timer);
+                    }
+                }
+                else {      //这里的话就是write发送给浏览器失败，关闭连接
+                    timer->cb_func(&user_timer[sockfd]);
+                    if (timer) timer_lst.del_timer(timer);
+                }
             }
         }
 
         if (timeout) {
             timer_handler();
+            printf("Now %d clients connect\n", http_conn::m_user_count);
             timeout = false;
         }
     }
 
     close(listenfd);
     close(epollfd);
-
+    close(pipefd[0]);
+    close(pipefd[1]);
+    delete[] users;
+    delete[] user_timer;
+    delete pool;
     pause();
     return 0;
 }
@@ -183,19 +227,12 @@ void cb_func(client_data* user_data) {
 //注册sig信号的回调函数为handler
 void addsig(int sig, void (handler)(int), bool restart = true) {
     struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
+    memset(&sa, '\0', sizeof(sa));
     sa.sa_handler = handler;
     if (restart)
         sa.sa_flags |= SA_RESTART;
     sigfillset(&sa.sa_mask);
     assert(sigaction(sig, &sa, NULL) != -1);
-}
-//把文件描述符fd设为非阻塞
-int setnoblocking(int fd) {
-    int old_option = fcntl(fd, F_GETFL);
-    int new_option = old_option | O_NONBLOCK;
-    fcntl(fd, F_SETFL, new_option);
-    return old_option;
 }
 //信号处理（回调）函数
 void sig_handler(int sig) {

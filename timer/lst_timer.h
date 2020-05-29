@@ -2,14 +2,14 @@
 #define LST_TIMER
 
 #include<time.h>
-#include <netinet\in.h>
+#include<netinet/in.h>
 
 class util_timer;
 struct client_data
 {
 	sockaddr_in address;
 	int sockfd;
-	util_timer* timer;
+	util_timer* timer;		//客户对应的定时器，和25行相互
 };
 
 //链表结点，包含事件和客户数据
@@ -22,7 +22,7 @@ public:
 	time_t expire;		//记录时间
 	//!!!定时器的执行函数，到时间就调用这个
 	void (*cb_func)(client_data*);	
-	client_data* user_data;		//客户数据
+	client_data* user_data;		//客户数据，和12行相互
 	util_timer* prev;		//双向链表
 	util_timer* next;		//双向链表
 };
@@ -53,7 +53,7 @@ public:
 		//直接将当前定时器结点作为头部结点
 		if (timer->expire < head->expire) {
 			timer->next = head;
-			head->next = timer;
+			head->prev = timer;
 			head = timer;
 			return;
 		}
@@ -101,9 +101,9 @@ public:
 		}
 		//被删除的是尾结点
 		if (timer == tail) {
-			tail->prev = tail;
+			tail = tail->prev;
 			tail->next = NULL;
-			delete tail;
+			delete timer;
 			return;
 		}
 		//不是头尾，普通删除

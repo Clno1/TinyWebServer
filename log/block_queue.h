@@ -3,6 +3,8 @@
 
 #include<iostream>
 #include<stdlib.h>
+#include<cstring>
+#include<string>
 
 #include"../lock/locker.h"
 

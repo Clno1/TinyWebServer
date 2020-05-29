@@ -17,6 +17,8 @@ extern int epoll_myinit();
 
 //把fd添加到监听红黑树epollfd上
 extern void addfd(int epollfd, int fd, bool oneshot);
-
+extern void removefd(int epollfd, int fd);
+extern void modfd(int epollfd, int fd, int ev);
+extern int setnoblocking(int fd);
 
 #endif

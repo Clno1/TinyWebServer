@@ -40,7 +40,7 @@ private:
 //线程池构造函数
 template<typename T>
 threadpool<T>::threadpool(connection_pool* connPool, int thread_number, int max_request) :
-	m_thread_number(thread_number), m_max_requests(max_requests), m_stop(false), m_threads(NULL), m_connPool(connPool) {
+	m_thread_number(thread_number), m_max_requests(max_request), m_stop(false), m_threads(NULL), m_connPool(connPool) {
 	if (thread_number <= 0 || max_request <= 0)	//不合理的线程数量和请求队列数量
 		throw std::exception();
 	m_threads = new pthread_t[m_thread_number];
